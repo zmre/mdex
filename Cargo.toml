@@ -1,10 +1,10 @@
 [package]
-name = "CHANGME"
+name = "mdex"
 version = "0.1.0"
 edition = "2018"
 authors = ["Patrick Walsh <patrick.walsh@ironcorelabs.com>"]
 license = "MIT OR Apache-2.0"
-description = "CHANGME"
+description = "console markdown viewer and explorer"
 readme = "README.md"
 keywords = ["cli"]
 categories = ["command-line-utilities"]
@@ -14,7 +14,7 @@ name = "lib"
 path = "src/lib.rs"
 
 [[bin]]
-name = "CHANGEME"
+name = "mdex"
 path = "src/main.rs"
 
 [dependencies]
@@ -43,12 +43,12 @@ confy = "0.4.0"
 # Prompt user for values if not found on CLI or in config
 text_io = "0.1.9"
 
-# Twitter API library
-egg-mode = { version = "0.16", features = ["rustls"], default-features = false }
-
 # Work with dates
 chrono = "^0.4"
 chrono-english = "^0.1"
+
+# print and colorize markdown files with skins
+termimad = "0.14"
 
 #reqwest = { version = "0.11", features = ["json"] }
 #ctrlc = "3.2.0"

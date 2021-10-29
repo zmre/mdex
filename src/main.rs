@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap_verbosity_flag::Verbosity;
 use confy::ConfyError;
+use lib::pretty_print_md;
 use log::debug;
 use serde::{Deserialize, Serialize};
 use simplelog::*;
@@ -10,8 +11,10 @@ use structopt::clap::{crate_version, AppSettings};
 use structopt::StructOpt;
 use text_io::read;
 
-const APP_NAME: &'static str = "CHANGEME";
-const APP_DESCRIPTION: &'static str = "CHANGEME";
+pub use lib::input::Input;
+
+const APP_NAME: &'static str = "mdex";
+const APP_DESCRIPTION: &'static str = "console markdown viewer and explorer";
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = APP_NAME, version = crate_version!(), about = APP_DESCRIPTION, rename_all = "kebab-case", setting = AppSettings::InferSubcommands)]
@@ -24,20 +27,9 @@ struct Cli {
     #[structopt(flatten)]
     verbose: Verbosity,
 
-    #[structopt(subcommand)]
-    cmd: Option<Command>,
-}
-
-#[derive(Debug, StructOpt)]
-enum Command {
-    /// Something
-    Home,
-    /// Something
-    List {
-        /// Something
-        #[structopt(short, long)]
-        name: String,
-    },
+    /// Input file, defaults to STDIN
+    #[structopt(parse(from_os_str))]
+    file: Option<PathBuf>,
 }
 
 #[derive(Default, Debug, Serialize, Deserialize)]
@@ -61,32 +53,26 @@ async fn run() -> Result<()> {
     let args = Cli::from_args();
     setup_logging(&args.verbose).expect("Failed to initialize logging");
     debug!("Got args {:?}", args);
-    let cfg: MyConfig = get_config_from_file(&args.config_file)
-        .and_then(|cfg: MyConfig| {
-            // If reading the config didn't throw an error, but produced a default
-            // config with no values, then prompt the user.
-            if cfg.secret == "" {
-                Ok(get_config_from_user(&args.config_file)?)
-            } else {
-                Ok(cfg)
-            }
-        })
-        // And if some error happened on reading, try to prompt the user and write.
-        .or_else(|_| get_config_from_user(&args.config_file))?;
+    let cfg: MyConfig = get_config_from_file(&args.config_file)?;
 
     debug!("Got config {:?}", cfg);
 
-    match args.cmd {
-        None | Some(Command::Home) => {
-            unimplemented!()
+    let mut input = match args.file {
+        None => Input::console(),
+        Some(filename) => {
+            if filename.to_str() == Some("-") {
+                Input::console()
+            } else {
+                Input::file(&filename)?
+            }
         }
-        Some(Command::List { name }) => {
-            unimplemented!()
-        }
-    }
+    };
+
+    pretty_print_md(&mut input);
 
     Ok(())
 }
+
 fn setup_logging(v: &Verbosity) -> Result<()> {
     Ok(TermLogger::init(
         match v.log_level().unwrap_or(log::Level::Error) {
